@@ -5,9 +5,10 @@ import { web3 } from "./web3";
 import { Dispatch, SetStateAction } from "react";
 
 export class CdpSearcher {
-    private static readonly SEARCH_LIMIT = 5000;
-    private static readonly RESULTS_NEEDED = 20;
+    public static readonly RESULTS_NEEDED = 20;
+    private static readonly SEARCH_LIMIT = 10000;
     private static readonly RPC_LIMIT = 5;
+    private activeOnly: boolean;
     private collateralType: string;
     private targetCdpId: number;
     private updateResults: Dispatch<SetStateAction<CdpInfo>>;
@@ -18,11 +19,13 @@ export class CdpSearcher {
     private r: number;
 
     constructor(
+        activeOnly: boolean,
         collateralType: string,
         targetCdpId: string,
         updateResults: Dispatch<SetStateAction<CdpInfo>>,
         setSearching: Dispatch<SetStateAction<boolean>>
     ) {
+        this.activeOnly = activeOnly;
         this.collateralType = collateralType;
         this.targetCdpId = parseInt(targetCdpId);
         this.updateResults = updateResults;
@@ -37,13 +40,9 @@ export class CdpSearcher {
         const leftDiff = this.targetCdpId - this.l;
         const rightDiff = this.r - this.targetCdpId;
 
-        let id = leftDiff < rightDiff ? this.l-- : this.r++;
+        const id = this.l > 0 && leftDiff < rightDiff ? this.l-- : this.r++;
 
-        if (id < 0) {
-            id = this.r++;
-        }
-
-        checkCdpId(this.collateralType, id.toString()).then((cdp) => {
+        checkCdpId(this.activeOnly, this.collateralType, id.toString()).then((cdp) => {
             if (!this.isActive) return;
             if (this.localResults.cdpList.length >= CdpSearcher.RESULTS_NEEDED) {
                 this.stop();
@@ -80,20 +79,25 @@ export class CdpSearcher {
     }
 }
 
-const checkCdpId = async (collateralType: string, targetCdpId: string): Promise<Cdp | null> => {
+const checkCdpId = async (
+    activeOnly: boolean,
+    collateralType: string,
+    targetCdpId: string
+): Promise<Cdp | null> => {
     const vaultContract = new web3.eth.Contract(vaultAbi, vaultAddress);
 
     const cdp = await vaultContract.methods.getCdpInfo(targetCdpId).call();
     const ilk = bytesToString(cdp.ilk as string);
 
-    if (ilk !== collateralType) {
+    // skip CRVV1ETHSTETH-A because it's stored differently
+    if (ilk !== collateralType || ilk === "CRVV1ETHSTETH-A") {
         return null; // not the right collateral type
     }
 
     const collateralAmount = cdp.collateral.toString();
     const debtAmount = cdp.debt.toString();
 
-    if (collateralAmount === "0" || debtAmount === "0") {
+    if (activeOnly && debtAmount === "0") {
         return null; // not active
     }
 

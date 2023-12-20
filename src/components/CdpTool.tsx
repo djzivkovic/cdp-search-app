@@ -7,7 +7,6 @@ import { CdpSearcher } from "../utils/helpers";
 import { CdpInfo } from "../utils/types";
 import ProgressBar from "react-bootstrap/esm/ProgressBar";
 import { ListGroup } from "react-bootstrap";
-import BigNumber from "bignumber.js";
 import CdpView from "./CdpView";
 
 interface CdpToolProps {
@@ -21,15 +20,20 @@ const CdpTool: React.FC<CdpToolProps> = ({ isMetaMaskInstalled, selectedChainId 
     );
     const [roughCdpId, setRoughCdpId] = useState<string>();
     const debouncedCdpId = useDebounce(roughCdpId, 1000);
-    const [cdpResults, setCdpResults] = useState<CdpInfo>(new CdpInfo("0"));
-    const [searching, setSearching] = useState<boolean>(false);
+
+    const [activeOnly, setActiveOnly] = useState<boolean>(false);
+    const debouncedActiveOnly = useDebounce(activeOnly, 500);
+
     const searcher = useRef<CdpSearcher | null>(null);
+    const [searching, setSearching] = useState<boolean>(false);
+    const [cdpResults, setCdpResults] = useState<CdpInfo>(new CdpInfo("0"));
 
     useEffect(() => {
         if (debouncedCdpId && debouncedCdpId !== "") {
             setCdpResults(new CdpInfo("0"));
             searcher.current?.stop();
             searcher.current = new CdpSearcher(
+                debouncedActiveOnly ?? false,
                 selectedCollateral,
                 debouncedCdpId,
                 setCdpResults,
@@ -37,7 +41,7 @@ const CdpTool: React.FC<CdpToolProps> = ({ isMetaMaskInstalled, selectedChainId 
             );
             searcher.current.start();
         }
-    }, [debouncedCdpId, selectedCollateral]);
+    }, [debouncedActiveOnly, debouncedCdpId, selectedCollateral]);
 
     if (isMetaMaskInstalled === null || selectedChainId === null) {
         return (
@@ -65,28 +69,39 @@ const CdpTool: React.FC<CdpToolProps> = ({ isMetaMaskInstalled, selectedChainId 
                         onSelect={setSelectedCollateral}
                         options={collateralOptions}
                     />
-                    <Form.Label className="mt-4">CDP Id</Form.Label>
+
+                    <Form.Label className="mt-2">CDP Id</Form.Label>
                     <Form.Control
                         className="w-25"
                         onChange={(e) => setRoughCdpId(e.target.value)}
                         type="number"
                         min="0"
                     />
-                    {searching && (
+                    <Form.Switch
+                        className="mt-2"
+                        label="Only show CDPs with active debt"
+                        onChange={(e) => setActiveOnly(e.target.checked)}
+                    />
+                    <div className={`mt-4 w-50 ${!searching && "invisible"}`}>
+                        Searching CDPs... This may take a while.
                         <ProgressBar
                             animated
-                            className="w-50 mt-4 overflow-visible"
+                            className="mt-2"
                             now={(cdpResults.cdpList.length / 20) * 100}
                             label={`${((cdpResults.cdpList.length / 20) * 100).toFixed(0)}%`}
                         />
-                    )}
+                    </div>
                     {cdpResults.cdpList.length > 0 && (
                         <>
                             <h5 className="mt-4">CDP List</h5>
                             <div className="mt-4 w-50 h-75 overflow-y-auto">
-                                <ListGroup className="">
+                                <ListGroup>
                                     {cdpResults.cdpList.map((result) => (
-                                        <CdpView cdp={result} rate={cdpResults.rate} />
+                                        <CdpView
+                                            key={result.id}
+                                            cdp={result}
+                                            rate={cdpResults.rate}
+                                        />
                                     ))}
                                 </ListGroup>
                             </div>
