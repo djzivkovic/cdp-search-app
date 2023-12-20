@@ -36,7 +36,7 @@ function App() {
                 .then(() => {
                     setSelectedChainId(1);
                 })
-                .catch((error: Error) => {
+                .catch((error: unknown) => {
                     console.error(error);
                 });
         }

@@ -42,27 +42,32 @@ export class CdpSearcher {
 
         const id = this.l > 0 && leftDiff < rightDiff ? this.l-- : this.r++;
 
-        checkCdpId(this.activeOnly, this.collateralType, id.toString()).then((cdp) => {
-            if (!this.isActive) return;
-            if (this.localResults.cdpList.length >= CdpSearcher.RESULTS_NEEDED) {
+        checkCdpId(this.activeOnly, this.collateralType, id.toString())
+            .then((cdp) => {
+                if (!this.isActive) return;
+                if (this.localResults.cdpList.length >= CdpSearcher.RESULTS_NEEDED) {
+                    this.stop();
+                    return;
+                }
+                if (cdp !== null) {
+                    this.localResults.cdpList.push(cdp);
+                    this.updateResults(
+                        new CdpInfo(
+                            this.localResults.rate,
+                            sortPositions(this.localResults.cdpList, this.targetCdpId)
+                        )
+                    );
+                }
+                if (this.r - this.l >= CdpSearcher.SEARCH_LIMIT) {
+                    this.stop();
+                    return;
+                }
+                this.checkNext();
+            })
+            .catch((err: unknown) => {
+                console.error(err);
                 this.stop();
-                return;
-            }
-            if (cdp !== null) {
-                this.localResults.cdpList.push(cdp);
-                this.updateResults(
-                    new CdpInfo(
-                        this.localResults.rate,
-                        sortPositions(this.localResults.cdpList, this.targetCdpId)
-                    )
-                );
-            }
-            if (this.r - this.l >= CdpSearcher.SEARCH_LIMIT) {
-                this.stop();
-                return;
-            }
-            this.checkNext();
-        });
+            });
     }
 
     public async start(): Promise<void> {
