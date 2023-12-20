@@ -1,26 +1,52 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useEffect, useState } from "react";
+import "./App.css";
+import CdpTool from "./components/CdpTool";
+import { injectedProvider, isInjectedProvider, web3 } from "./utils/web3";
 
 function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+    const [isMetamaskInstalled, setIsMetamaskInstalled] = useState<boolean | null>(null);
+    const [selectedChainId, setSelectedChainId] = useState<number | null>(null);
+
+    useEffect(() => {
+        setIsMetamaskInstalled(isInjectedProvider);
+        if (isInjectedProvider) {
+            web3.eth.getChainId().then((chainId) => setSelectedChainId(Number(chainId)));
+            if (web3.provider) {
+                web3.provider.on("chainChanged", (chainId) => {
+                    setSelectedChainId(Number(chainId));
+                });
+            }
+            return () => {
+                if (web3?.provider) {
+                    web3.provider.removeListener("chainChanged", () => {});
+                }
+            };
+        } else {
+            setSelectedChainId(-1);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (selectedChainId !== null && selectedChainId !== 1 && selectedChainId !== -1) {
+            injectedProvider
+                .request({
+                    method: "wallet_switchEthereumChain",
+                    params: [{ chainId: "0x1" }],
+                })
+                .then(() => {
+                    setSelectedChainId(1);
+                })
+                .catch((error: Error) => {
+                    console.error(error);
+                });
+        }
+    }, [selectedChainId]);
+
+    return (
+        <div className="App">
+            <CdpTool isMetaMaskInstalled={isMetamaskInstalled} selectedChainId={selectedChainId} />
+        </div>
+    );
 }
 
 export default App;

@@ -13,19 +13,19 @@ export class CdpInfo {
 export class Cdp {
     id: string;
     userAddr: string;
-    collateral_type: string;
+    collateralType: string;
     collateral: string;
     debt: string;
     constructor(
         id: string,
         userAddr: string,
-        collateral_type: string,
+        collateralType: string,
         collateral: string,
         debt: string
     ) {
         this.id = id;
         this.userAddr = userAddr;
-        this.collateral_type = collateral_type;
+        this.collateralType = collateralType;
         this.collateral = collateral;
         this.debt = debt;
     }
