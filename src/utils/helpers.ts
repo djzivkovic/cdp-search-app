@@ -1,13 +1,13 @@
-import { vatAbi, vatAddress, vaultAbi, vaultAddress } from "./constants";
+import { vatContract, vaultContract } from "./constants";
 import { bytesToString, stringToBytes } from "@defisaver/tokens/esm/utils";
 import { Cdp, CdpInfo } from "./types";
-import { web3 } from "./web3";
 import { Dispatch, SetStateAction } from "react";
 
 export class CdpSearcher {
     public static readonly RESULTS_NEEDED = 20;
     private static readonly SEARCH_LIMIT = 10000;
     private static readonly RPC_LIMIT = 5;
+    private static runningCalls = 0;
     private activeOnly: boolean;
     private collateralType: string;
     private targetCdpId: number;
@@ -36,14 +36,12 @@ export class CdpSearcher {
         this.r = this.targetCdpId + 1;
     }
 
-    private async checkNext(): Promise<void> {
-        const leftDiff = this.targetCdpId - this.l;
-        const rightDiff = this.r - this.targetCdpId;
-
-        const id = this.l > 0 && leftDiff < rightDiff ? this.l-- : this.r++;
-
-        checkCdpId(this.activeOnly, this.collateralType, id.toString())
-            .then((cdp) => {
+    private async search(): Promise<void> {
+        while (this.r - this.l < CdpSearcher.SEARCH_LIMIT) {
+            const id = this.getNextId();
+            CdpSearcher.runningCalls++;
+            try {
+                const cdp = await checkCdpId(this.activeOnly, this.collateralType, id.toString());
                 if (!this.isActive) return;
                 if (this.localResults.cdpList.length >= CdpSearcher.RESULTS_NEEDED) {
                     this.stop();
@@ -58,29 +56,43 @@ export class CdpSearcher {
                         )
                     );
                 }
-                if (this.r - this.l >= CdpSearcher.SEARCH_LIMIT) {
-                    this.stop();
-                    return;
-                }
-                this.checkNext();
-            })
-            .catch((err: unknown) => {
+            } catch (err) {
                 console.error(err);
-                this.stop();
-            });
+            } finally {
+                CdpSearcher.runningCalls--;
+            }
+        }
+        this.stop();
     }
 
     public async start(): Promise<void> {
+        if (this.targetCdpId <= 0) return;
+        await this.waitForPreviousSearches();
         this.setSearching(true);
         this.localResults.rate = await getDebtRate(this.collateralType);
         for (let i = 0; i < CdpSearcher.RPC_LIMIT; i++) {
-            this.checkNext();
+            this.search();
         }
     }
 
     public stop(): void {
         this.isActive = false;
         this.setSearching(false);
+    }
+
+    private getNextId(): number {
+        const leftDiff = this.targetCdpId - this.l;
+        const rightDiff = this.r - this.targetCdpId;
+
+        if (this.l <= 0) return this.r++;
+
+        return leftDiff < rightDiff ? this.l-- : this.r++;
+    }
+
+    private async waitForPreviousSearches(): Promise<void> {
+        while (CdpSearcher.runningCalls !== 0) {
+            await new Promise((resolve) => setTimeout(resolve, 100)); // wait for 100ms before checking again
+        }
     }
 }
 
@@ -89,8 +101,6 @@ const checkCdpId = async (
     collateralType: string,
     targetCdpId: string
 ): Promise<Cdp | null> => {
-    const vaultContract = new web3.eth.Contract(vaultAbi, vaultAddress);
-
     const cdp = await vaultContract.methods.getCdpInfo(targetCdpId).call();
     const ilk = bytesToString(cdp.ilk as string);
 
@@ -110,8 +120,6 @@ const checkCdpId = async (
 };
 
 const getDebtRate = async (collateralType: string): Promise<string> => {
-    const vatContract = new web3.eth.Contract(vatAbi, vatAddress);
-
     const ilkDetails = await vatContract.methods.ilks(stringToBytes(collateralType)).call();
 
     return ilkDetails.rate.toString();

@@ -1,8 +1,11 @@
-export const collateralOptions = ["ETH-A", "WBTC-A", "USDC-A", "UNI-A", "YFI-A", "BAT-A"];
-export const vaultAddress: string = "0x68C61AF097b834c68eA6EA5e46aF6c04E8945B2d";
-export const vatAddress: string = "0x35D1b3F3D7966A1DFe207aa4514C12a259A0492B";
+import { web3 } from "./web3";
 
-export const vaultAbi = [
+export const collateralOptions = ["ETH-A", "WBTC-A", "USDC-A", "UNI-A", "YFI-A", "BAT-A"];
+
+const vaultAddress: string = "0x68C61AF097b834c68eA6EA5e46aF6c04E8945B2d";
+const vatAddress: string = "0x35D1b3F3D7966A1DFe207aa4514C12a259A0492B";
+
+const vaultAbi = [
     {
         inputs: [{ internalType: "address", name: "owner", type: "address" }],
         name: "_getProxyOwner",
@@ -26,7 +29,7 @@ export const vaultAbi = [
     },
 ] as const;
 
-export const vatAbi = [
+const vatAbi = [
     { inputs: [], payable: false, stateMutability: "nonpayable", type: "constructor" },
     {
         anonymous: true,
@@ -359,3 +362,6 @@ export const vatAbi = [
         type: "function",
     },
 ] as const;
+
+export const vaultContract = new web3.eth.Contract(vaultAbi, vaultAddress);
+export const vatContract = new web3.eth.Contract(vatAbi, vatAddress);

@@ -18,7 +18,7 @@ const CdpTool: React.FC<CdpToolProps> = ({ isMetaMaskInstalled, selectedChainId 
     const [selectedCollateral, setSelectedCollateral] = useState<string>(
         collateralOptions[0] || "No collateral types available"
     );
-    const [roughCdpId, setRoughCdpId] = useState<string>();
+    const [roughCdpId, setRoughCdpId] = useState<string>("");
     const debouncedCdpId = useDebounce(roughCdpId, 1000);
 
     const [activeOnly, setActiveOnly] = useState<boolean>(false);
@@ -29,11 +29,12 @@ const CdpTool: React.FC<CdpToolProps> = ({ isMetaMaskInstalled, selectedChainId 
     const [cdpResults, setCdpResults] = useState<CdpInfo>(new CdpInfo("0"));
 
     useEffect(() => {
-        if (debouncedCdpId && debouncedCdpId !== "") {
-            setCdpResults(new CdpInfo("0"));
-            searcher.current?.stop();
+        searcher.current?.stop();
+        setCdpResults(new CdpInfo("0"));
+
+        if (debouncedCdpId !== "") {
             searcher.current = new CdpSearcher(
-                debouncedActiveOnly ?? false,
+                debouncedActiveOnly,
                 selectedCollateral,
                 debouncedCdpId,
                 setCdpResults,
