@@ -1,46 +1,47 @@
-# Getting Started with Create React App
+# CDP Search Application
+## Overview
+The CDP Search Application provides a user interface to interact with CDPs (Collateralized Debt Positions) on the Ethereum blockchain. The application allows users to search and view specific CDPs based on various criteria such as collateral type, CDP ID, and active debt status. It uses the Web3.js library to interact with Ethereum smart contracts and fetch relevant CDP information.
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Features
 
-## Available Scripts
+- Metamask Integration: Detects if Metamask is installed in the browser and provides functionalities accordingly.
+- Chain Id Management: Monitors the Ethereum chain ID and prompts users to switch to Ethereum Mainnet if required.
+- CDP Search: Allows users to search for CDPs based on collateral type, CDP ID, and active debt status.
+  
+## Prerequisites
+Before running this application, ensure you have the following prerequisites:
 
-In the project directory, you can run:
+- Node.js
+- Metamask extension installed on your browser
 
-### `npm start`
+## Installation
+### Install dependencies:
+```
+npm install
+```
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+## Configuration
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+Ensure you have the correct ABI and address details for the Ethereum smart contracts in the `constants.ts` file.
 
-### `npm test`
+You can also change which collateral types are supported.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Running the Application
+To run the CDP Search Application locally, execute the following command:
 
-### `npm run build`
+```
+npm start
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+This will start the development server, and you can access the application at [http://localhost:3000](http://localhost:3000) in your browser.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Usage
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+- Open the application in your browser.
+- If Metamask is not installed, you'll receive a notification prompting you to install it.
+- Ensure you are connected to the Ethereum Mainnet.
+- Use the provided options and fields to search for specific CDPs based on your criteria.
 
-### `npm run eject`
+## Author
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+Djordje Zivkovic
